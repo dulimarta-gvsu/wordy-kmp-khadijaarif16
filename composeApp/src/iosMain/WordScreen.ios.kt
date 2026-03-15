@@ -1,4 +1,4 @@
-package edu.gvsu.cis.kmp_wordy.AppViewModel
+package edu.gvsu.cis.kmp_wordy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.fillMaxSize

@@ -17,7 +17,9 @@ class MainActivity : ComponentActivity() {
 //        lines -> appViewModel.createDictionary}
         setContent {
 
-            App()
+            App(onLoadDictionary = {vm -> assets.open("dictionary.txt").bufferedReader().useLines {
+                lines-> vm.createDictionary(lines)
+            }})
         }
     }
 }

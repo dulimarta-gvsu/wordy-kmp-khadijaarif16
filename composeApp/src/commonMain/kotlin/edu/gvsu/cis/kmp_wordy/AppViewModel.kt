@@ -90,7 +90,7 @@ class AppViewModel : ViewModel() {
     private val _settings = MutableStateFlow(GameSettings())
     val settings: NonNullStateFlowWrapper<GameSettings> =
         _settings.stateIn(viewModelScope, SharingStarted.Eagerly, GameSettings()).wrap()
-
+    
 
     private var moveCounter = 0
 

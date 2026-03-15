@@ -8,8 +8,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.RangeSlider
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: AppViewModel, onConfirm:()->Unit, onCancel: () -> Unit)
 {
@@ -20,6 +22,7 @@ fun SettingsScreen(viewModel: AppViewModel, onConfirm:()->Unit, onCancel: () -> 
     var minLen by remember(savedSettings){mutableStateOf(savedSettings.minWordLength.toFloat())}
     var maxLen by remember(savedSettings){mutableStateOf(savedSettings.maxWordLength.toFloat())}
     var stockLetters by remember(savedSettings){mutableStateOf(savedSettings.stockLetters.toFloat())}
+    var workLengthRange by remember(savedSettings){mutableStateOf(savedSettings.minWordLength.toFloat()..savedSettings.maxWordLength.toFloat())}
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -33,26 +36,20 @@ fun SettingsScreen(viewModel: AppViewModel, onConfirm:()->Unit, onCancel: () -> 
         Text("Blue: ${(blue*255).toInt()}")
         Slider(value = blue, onValueChange = {blue=it}, valueRange = 0f..1f)
 
-        //word lengths
-        Text("Min Word Length: ${(minLen).toInt()}")
-        Slider(value = minLen, onValueChange = {
-            minLen=it
-            if(maxLen<it)
-                maxLen =it
-                                               }, valueRange = 2f..12f)
-        Text("Max Word Length: ${(maxLen).toInt()}")
-        Slider(value = maxLen, onValueChange = {
-            maxLen=it
-            if(minLen>it)
-                minLen =it
-            if(stockLetters<it)
-                stockLetters=it
-                                               }, valueRange = 2f..12f)
+        Text("Word Length: ${workLengthRange.start.toInt()} - ${workLengthRange.endInclusive.toInt()}")
+        RangeSlider(
+            value = workLengthRange, onValueChange = {
+                workLengthRange = it
+                if (stockLetters <it.endInclusive) stockLetters = it.endInclusive
+            },
+            valueRange = 2f..12f
+        )
 
 
-        Text("Stock Letters: ${(stockLetters).toInt()}")
+
+        Text("Stock Letters: ${(stockLetters).toInt().coerceAtLeast((workLengthRange.endInclusive.toInt()))}")
         Slider(value = stockLetters, onValueChange = {
-            stockLetters=it.coerceAtLeast(maxLen)
+            stockLetters=it.coerceAtLeast(workLengthRange.endInclusive)
                                                      }, valueRange = 4f..20f)
 
         //buttons
@@ -62,9 +59,9 @@ fun SettingsScreen(viewModel: AppViewModel, onConfirm:()->Unit, onCancel: () -> 
             Button(onClick = {
                 viewModel.settingsApply(GameSettings(
                     red =red, green =green, blue =blue,
-                    minWordLength = minLen.toInt(),
-                    maxWordLength = maxLen.toInt(),
-                    stockLetters=stockLetters.toInt().coerceAtLeast(maxLen.toInt())
+                    minWordLength = workLengthRange.start.toInt(),
+                    maxWordLength = workLengthRange.endInclusive.toInt(),
+                    stockLetters=stockLetters.toInt().coerceAtLeast(workLengthRange.endInclusive.toInt())
                 ))
                 onConfirm()
             }) {Text("Confirm")}

@@ -11,7 +11,7 @@ struct ContentView: View {
     }
     @State var letterSize: Int = 40
 
-    }
+
 
     var body: some View {
         VStack {

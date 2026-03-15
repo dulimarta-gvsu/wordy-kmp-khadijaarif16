@@ -60,10 +60,10 @@ actual fun WordScreen(viewModel: AppViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            LetterGroup(letters = arrangedLetters, groupId = "Top") {
+            LetterGroup(letters = arrangedLetters, groupId = "Top",viewModel = viewModel) {
                 viewModel.rearrangeLetters(Origin.CenterBox, it.filterNotNull())
             }
-            LetterGroup(letters = stockLetters, groupId = "Bottom") {
+            LetterGroup(letters = stockLetters, groupId = "Bottom",viewModel = viewModel) {
                 println("Bottom box rearrange $it")
                 viewModel.rearrangeLetters(Origin.Stock, it.filterNotNull())
             }
@@ -72,8 +72,10 @@ actual fun WordScreen(viewModel: AppViewModel) {
 }
 
 @Composable
-fun BigLetter(modifier: Modifier = Modifier, letter: Letter?, cellSize: Dp = 48.dp) {
-    val color = if(letter==null) Color.Transparent else Color.Green
+fun BigLetter(modifier: Modifier = Modifier, letter: Letter?, cellSize: Dp = 48.dp, viewModel: AppViewModel) {
+    val settings by viewModel.settings.collectAsState()
+    //val color = if(letter==null) Color.Transparent else Color.Green
+    val color = if(letter == null) Color.Transparent else Color(settings.red,settings.green,settings.blue)
     val lum = 0.2126f * color.red + 0.7152f * color.green + 0.722f* color.blue
     val textColor = if (lum>0.4f) Color.Black else Color.White
     Box(
@@ -125,6 +127,7 @@ fun BigLetter(modifier: Modifier = Modifier, letter: Letter?, cellSize: Dp = 48.
 fun LetterGroup(
     modifier: Modifier = Modifier, groupId: String,
     letters: List<Letter?>,
+    viewModel: AppViewModel,
     onRearranged: (List<Letter?>) -> Unit
 ) {
     val configuration = LocalConfiguration.current
@@ -240,7 +243,7 @@ fun LetterGroup(
                     key = { pos, item -> "$pos-" + (item?.text ?: "#") }) { pos, lx ->
                     BigLetter(
                         letter = lx, cellSize = letterSize.coerceAtMost(80.dp),
-                        modifier = Modifier
+                        viewModel = viewModel,modifier = Modifier
                             .dragAndDropSource(transferData =  {
                                 startDragIndex = pos
                                 draggedLetter = lx
