@@ -15,17 +15,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 //        assets.open("dictionary.txt").bufferedReader().useLines {
 //        lines -> appViewModel.createDictionary}
-        setContent {
+    val database = buildDatabase(this)
+    setContent {
 
-            App(onLoadDictionary = {vm -> assets.open("dictionary.txt").bufferedReader().useLines {
+
+            App(database = database, onLoadDictionary = {vm -> assets.open("dictionary.txt").bufferedReader().useLines {
                 lines-> vm.createDictionary(lines)
             }})
         }
     }
 }
 
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
-}
+//@Preview
+//@Composable
+//fun AppAndroidPreview() {
+//    App()
+//}

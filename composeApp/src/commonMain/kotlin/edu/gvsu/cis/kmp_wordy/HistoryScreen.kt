@@ -8,8 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.items
-
-
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.graphics.Color
 @Composable
 fun HistoryScreen(viewModel: AppViewModel, onBack:()->Unit)
 {
@@ -31,12 +32,21 @@ fun HistoryScreen(viewModel: AppViewModel, onBack:()->Unit)
 
 
                 LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(history) { session ->
-                        Card {
-                            Text(
-                                text = "${session.word}: ${session.points} points, ${session.numMoves} moves,${session.time} s ",
-                                modifier = Modifier.padding(8.dp)
-                            )
+                    items(history, key = {it.session_id}) { session ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween){
+                                Column{
+                                    Text("${session.word}: ${session.points} points")
+                                    Text("Moves: ${session.numMoves}, Time:${session.time} s")
+
+
+                                }
+                                TextButton(onClick = {viewModel.deleteSession(session)}){
+                                    Text("Delete", color = Color.Red)
+                                }
+                            }
+
                         }
                     }
                 }

@@ -1,17 +1,23 @@
 package edu.gvsu.cis.kmp_wordy
 
 import com.hoc081098.kmp.viewmodel.ViewModel
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.launch
 import com.hoc081098.kmp.viewmodel.wrapper.NonNullStateFlowWrapper
 import com.hoc081098.kmp.viewmodel.wrapper.wrap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 //replaced
 data class Letter(val text: Char = '$', val point: Int = 0, val letterMultiplier: Int =1, val wordMultiplier: Int =1)
-data class GameSession(val word: String, val points: Int,
+@Entity
+data class GameSession(
+    @PrimaryKey(autoGenerate = true) val session_id: Int=0,
+    val word: String, val points: Int,
                        val numMoves: Int, val time: Long)
 data class GameSettings(
     val red : Float=0F,val green : Float=0.8F,val blue : Float=0F,
@@ -27,7 +33,7 @@ fun List<Letter?>.pretty(): String =
     if (this.isEmpty()) "[]" else
     this.map { it?.text ?: "#" }.joinToString(separator = "-")
 
-class AppViewModel : ViewModel() {
+class AppViewModel(private val dao: GameSessionDao) : ViewModel() {
     private val _sourceLetters = MutableStateFlow(emptyList<Letter?>())
     val sourceLetters: NonNullStateFlowWrapper<List<Letter?>> =
         _sourceLetters.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -96,6 +102,9 @@ class AppViewModel : ViewModel() {
 
     init {
         selectRandomLetters()
+        viewModelScope.launch(Dispatchers.IO){
+            _gameHistory.update{dao.selectAll()}
+        }
     }
 
     //added
@@ -160,8 +169,12 @@ class AppViewModel : ViewModel() {
                 numMoves = moveCounter,
                 time = 0L
             )
+            viewModelScope.launch(Dispatchers.IO){
+                dao.insert(session)
+                _gameHistory.update { dao.selectAll() }
+            }
 
-            _gameHistory.update { it + session } //added to history
+            //_gameHistory.update { it + session } //added to history
             //have to add scoring
             _totalScore.update { it + _wordScore.value }
             _wordsFound.update { it + 1 }
@@ -176,7 +189,12 @@ class AppViewModel : ViewModel() {
         return false
 
     }
-
+    fun deleteSession(session: GameSession){
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.delete(session)
+            _gameHistory.update { dao.selectAll() }
+        }
+    }
     // This function is needed for the iOS version of the ViewModel
     fun moveTo(group: Origin, itemIndex: Int) {
         if (itemIndex < 0) return
@@ -227,20 +245,34 @@ class AppViewModel : ViewModel() {
 
     //sorting functions
     fun sortbyPoints() {
-        _gameHistory.update { it.sortedBy { s -> s.points } }
+        //_gameHistory.update { it.sortedBy { s -> s.points } }
+        viewModelScope.launch(Dispatchers.IO){
+            _gameHistory.update { dao.selectAllSortedByPoints() }
+        }
+
     }
 
     fun sortbyLength() {
-        _gameHistory.update { it.sortedBy { s -> s.word.length } }
+        //_gameHistory.update { it.sortedBy { s -> s.word.length } }
+        viewModelScope.launch(Dispatchers.IO){
+            _gameHistory.update { dao.selectAllSortedByLength() }
+        }
+
     }
 
     fun sortAlphabetically() {
-        _gameHistory.update { it.sortedBy { s -> s.word } }
+        //_gameHistory.update { it.sortedBy { s -> s.word } }
+        viewModelScope.launch(Dispatchers.IO){
+            _gameHistory.update { dao.selectAllSortedAlphabetically() }
+        }
     }
 
     fun sortbyMovesAndTime() {
-        _gameHistory.update {
-            it.sortedWith(compareBy<GameSession> { s -> s.time }.thenByDescending { s -> s.numMoves })
+//        _gameHistory.update {
+//            it.sortedWith(compareBy<GameSession> { s -> s.time }.thenByDescending { s -> s.numMoves })
+//        }
+        viewModelScope.launch(Dispatchers.IO){
+            _gameHistory.update { dao.selectAllSortedByTimeAndMoves() }
         }
 
     }

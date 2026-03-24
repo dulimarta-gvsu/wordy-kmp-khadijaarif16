@@ -4,11 +4,15 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     //added
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+    //added
     kotlin("plugin.serialization") version "2.3.0"
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+
 
 }
 
@@ -16,6 +20,17 @@ kotlin {
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
+        }
+
+    }
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
         }
     }
     
@@ -35,12 +50,18 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            //added
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
             implementation(projects.shared)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
     }
+}//added
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {
@@ -71,6 +92,10 @@ android {
 }
 
 dependencies {
+    add("kspAndroid", libs.room.compiler)
+    add("kspIosX64", libs.room.compiler)
+    add("kspIosArm64", libs.room.compiler)
+    add("kspIosSimulatorArm64", libs.room.compiler)
+//    add("ksp", libs.room.compiler)
     debugImplementation(libs.compose.uiTooling)
 }
-

@@ -8,11 +8,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.LaunchedEffect
+import androidx.room.Database
 
 @Composable
-fun App(onLoadDictionary: (AppViewModel) -> Unit = {}) {
+fun App(database: AppDB, onLoadDictionary: (AppViewModel) -> Unit = {}) {
     MaterialTheme {
-        val vm: AppViewModel = remember { AppViewModel() }
+        val dao = database.gameSessionDao()
+        val vm: AppViewModel = remember { AppViewModel(dao) }
         LaunchedEffect(vm) { onLoadDictionary(vm) }
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "main"){
