@@ -1,5 +1,6 @@
 package edu.gvsu.cis.kmp_wordy
 
+import androidx.collection.mutableFloatIntMapOf
 import com.hoc081098.kmp.viewmodel.ViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.hoc081098.kmp.viewmodel.wrapper.NullableStateFlowWrapper
+
 //replaced
 data class Letter(val text: Char = '$', val point: Int = 0, val letterMultiplier: Int =1, val wordMultiplier: Int =1)
 @Entity
@@ -96,14 +99,35 @@ class AppViewModel(private val dao: GameSessionDao) : ViewModel() {
     private val _settings = MutableStateFlow(GameSettings())
     val settings: NonNullStateFlowWrapper<GameSettings> =
         _settings.stateIn(viewModelScope, SharingStarted.Eagerly, GameSettings()).wrap()
-    
 
+    private val _matchNotFound = MutableStateFlow(false)
+    val matchNotFound: NonNullStateFlowWrapper<Boolean> =
+        _matchNotFound.stateIn(viewModelScope, SharingStarted.Eagerly, false).wrap()
     private var moveCounter = 0
-
+    //new
+    private val _dictionary = MutableStateFlow(emptySet<String>())
+    private val _isLoadingDictionary = MutableStateFlow(true)
+    val isLoadingDictionary: NonNullStateFlowWrapper<Boolean> =
+        _isLoadingDictionary.stateIn(viewModelScope, SharingStarted.Eagerly, true).wrap()
+    private val _wordMeaning = MutableStateFlow("")
+    val wordMeaning: NonNullStateFlowWrapper<String> =
+        _wordMeaning.stateIn(viewModelScope, SharingStarted.Eagerly, "").wrap()
     init {
         selectRandomLetters()
         viewModelScope.launch(Dispatchers.IO){
             _gameHistory.update{dao.selectAll()}
+        }
+        viewModelScope.launch(Dispatchers.IO){
+            try{
+                val words = WordsfromQuotes()
+                _dictionary.update{words}
+                println("Dictionary loaded: ${words.size} words were fetched from the API")
+            }
+            catch(e:Exception){
+                println("Failed to fetch: ${e.message}")
+            }
+            _isLoadingDictionary.value = false
+            _matchNotFound.value = false
         }
     }
 
@@ -111,9 +135,9 @@ class AppViewModel(private val dao: GameSessionDao) : ViewModel() {
     fun settingsApply(newSettings: GameSettings){
         _settings.update { newSettings }
     }
-    fun createDictionary(lines: Sequence<String>) {
-        dictionary.addAll(lines.map { it.trim().uppercase() })
-    }
+//    fun createDictionary(lines: Sequence<String>) {
+//        dictionary.addAll(lines.map { it.trim().uppercase() })
+//    }
 
     //copied from previous assignment
     fun selectRandomLetters() {
@@ -140,6 +164,7 @@ class AppViewModel(private val dao: GameSessionDao) : ViewModel() {
         _totalScore.value = 0
         _wordsFound.value = 0
         moveCounter = 0 //reset for new game
+        _wordMeaning.value = ""//reset
     }
 
     fun ReshuffleRemaining() {
@@ -161,30 +186,52 @@ class AppViewModel(private val dao: GameSessionDao) : ViewModel() {
 
     fun submitWord(): Boolean {
         val word = _targetLetters.value.filterNotNull().map { it.text }.joinToString("").uppercase()
-        if (dictionary.contains(word)) {
+        println("submitWord called with: $word")
+        println("Dictionary size: ${_dictionary.value.size}")
+        println("Contains word: ${_dictionary.value.contains(word)}")
+        if (_dictionary.value.contains(word)) {
             //sesion an dthen add to history
+            _matchNotFound.value = false
             val session = GameSession(
                 word = word,
                 points = _wordScore.value,
                 numMoves = moveCounter,
                 time = 0L
             )
-            viewModelScope.launch(Dispatchers.IO){
-                dao.insert(session)
-                _gameHistory.update { dao.selectAll() }
+            val currentWordScore = _wordScore.value
+            _wordMeaning.value = "" //clear the word
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    dao.insert(session)
+                    _gameHistory.update { dao.selectAll() }
+                    _totalScore.update { it + currentWordScore }
+                    _wordsFound.update { it + 1 }
+
+
+//                    _targetLetters.value = emptyList()
+//                    _wordScore.value = 0
+//                    moveCounter = 0
+                }
+                catch(e: Exception){println("Log: Error during submission: ${e.message}")}
+                _targetLetters.value = emptyList()
+                _wordScore.value = 0
+                moveCounter = 0
+                _wordMeaning.value = fetchMeaning(word) ?: ""
             }
 
             //_gameHistory.update { it + session } //added to history
             //have to add scoring
-            _totalScore.update { it + _wordScore.value }
-            _wordsFound.update { it + 1 }
+//            _totalScore.update { it + _wordScore.value }
+//            _wordsFound.update { it + 1 }
             //clear for next turn
-            _targetLetters.value = emptyList()
-            _wordScore.value = 0
-            moveCounter = 0//reset
+//            _targetLetters.value = emptyList()
+//            _wordScore.value = 0
+//            moveCounter = 0//reset
             return true
         } else {
             _wordScore.value = 0
+            _wordMeaning.value = ""
+            _matchNotFound.value = true
         }
         return false
 

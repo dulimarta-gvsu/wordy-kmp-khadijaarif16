@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,7 +61,9 @@ fun MainScreen(viewModel: AppViewModel, onNavigateToSettings: () -> Unit, onNavi
     val wordScore by viewModel.wordScore.collectAsState()
     val wordsFound by viewModel.wordsFound.collectAsState()
     //for feedback when word is submitted
-
+    val isLoading by viewModel.isLoadingDictionary.collectAsState()
+    val wordMeaning by viewModel.wordMeaning.collectAsState()
+    val matchNotFound by viewModel.matchNotFound.collectAsState()
     Column(
 
         modifier = Modifier
@@ -69,6 +72,9 @@ fun MainScreen(viewModel: AppViewModel, onNavigateToSettings: () -> Unit, onNavi
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement= Arrangement.spacedBy(8.dp)
     ) {
+        if(isLoading){
+            Text("Loading dictionary...", style = MaterialTheme.typography.bodySmall)
+        }
         //need a row of buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -94,7 +100,17 @@ fun MainScreen(viewModel: AppViewModel, onNavigateToSettings: () -> Unit, onNavi
             }
         }
         Text("Word Score: $wordScore")
-
+        if (matchNotFound) {
+            Text(
+                text = "Match not found!",
+                color = Color.Red,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (wordMeaning.isNotEmpty()){
+            Text(text = "Meaning: $wordMeaning",
+            style = MaterialTheme.typography.bodySmall)
+        }
 
         Row(modifier = Modifier, horizontalArrangement = Arrangement.SpaceBetween)
         {

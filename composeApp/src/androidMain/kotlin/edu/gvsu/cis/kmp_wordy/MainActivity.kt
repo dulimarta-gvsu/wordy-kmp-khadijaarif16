@@ -9,19 +9,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 
 class MainActivity : ComponentActivity() {
-//    private val appViewModel: AppViewModel by viewModels
+    //    private val appViewModel: AppViewModel by viewModels
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 //        assets.open("dictionary.txt").bufferedReader().useLines {
 //        lines -> appViewModel.createDictionary}
-    val database = buildDatabase(this)
-    setContent {
+        val database = buildDatabase(this)
+        setContent {
 
 
-            App(database = database, onLoadDictionary = {vm -> assets.open("dictionary.txt").bufferedReader().useLines {
-                lines-> vm.createDictionary(lines)
-            }})
+            App(database = database)
         }
     }
 }

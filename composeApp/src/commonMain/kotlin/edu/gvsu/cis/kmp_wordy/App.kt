@@ -15,7 +15,7 @@ fun App(database: AppDB, onLoadDictionary: (AppViewModel) -> Unit = {}) {
     MaterialTheme {
         val dao = database.gameSessionDao()
         val vm: AppViewModel = remember { AppViewModel(dao) }
-        LaunchedEffect(vm) { onLoadDictionary(vm) }
+        //LaunchedEffect(vm) { onLoadDictionary(vm) }
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "main"){
             composable("main")

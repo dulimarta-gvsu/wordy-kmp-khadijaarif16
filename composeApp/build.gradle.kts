@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     //added
-    kotlin("plugin.serialization") version "2.3.0"
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
@@ -38,6 +38,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.ktor.client.okhttp) //ktor
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)  // iOS Ktor engine
         }
         commonMain.dependencies {
             //added
@@ -53,6 +57,11 @@ kotlin {
             //added
             implementation(libs.room.runtime)
             implementation(libs.sqlite.bundled)
+            implementation(projects.shared)
+            // Ktor
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.json)
             implementation(projects.shared)
         }
         commonTest.dependencies {
