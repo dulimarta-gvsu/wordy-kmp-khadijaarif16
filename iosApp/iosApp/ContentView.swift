@@ -4,15 +4,18 @@ import Shared
 extension Letter: Identifiable {}
 
 struct ContentView: View {
-    @StateObject var vm = iosAppViewModel(commonVm: AppViewModel())
+    @StateObject var vm: iosAppViewModel
+
+    init(viewModel: iosAppViewModel) {
+        self._vm = StateObject(wrappedValue: viewModel)
+    }
     @State var letterSize: Int = 40
+
+
 
     var body: some View {
         VStack {
-            Button("Restart") {
-                vm.selectRandomLetters()
-                print(vm.sourceLetters)
-            }
+
             LetterGroup(letters: $vm.targetLetters, groupName: "Top", onRemoveLetter: { removePos in
                 vm.moveTo(group: Origin.stock, pos: removePos)
             }) { arr in
@@ -135,12 +138,21 @@ struct LetterGroup: View {
 
 struct BigLetter: View {
     private let ch: String
+    private let point: Int
+    private let letterMultiplier: Int
+    private let wordMultiplier: Int
     let size: CGFloat
     init(letter: Letter?, size: CGFloat = 44) {
         if let letter {
             self.ch = String(UnicodeScalar(letter.text)!)
+            self.point = Int(letter.point)
+            self.letterMultiplier= Int(letter.letterMultiplier)
+            self.wordMultiplier= Int(letter.wordMultiplier)
         } else {
             self.ch = ""
+            self.point = 0
+            self.letterMultiplier=1
+            self.wordMultiplier =1
         }
         self.size = size
     }
@@ -152,11 +164,31 @@ struct BigLetter: View {
             .cornerRadius(10)
             .overlay(RoundedRectangle(cornerRadius: 10)
                 .stroke(.black, lineWidth: 2))
+            .overlay(alignment: .bottomTrailing){
+                if ch!= ""
+                {
+                Text("\(point)").font(.system(size:10))
+                }}
+            .overlay(alignment: .topTrailing){
+                if letterMultiplier>1
+                {
+                Text("L\(letterMultiplier)").font(.system(size:10))
+                }}
+            .overlay(alignment: .bottomLeading){
+                if wordMultiplier>1
+                {
+                Text("W\(wordMultiplier)").font(.system(size:10))
+                }}
     }
 }
-
+class IOSWordScreenFactory: WordScreenFactory {
+    func createWordScreen(viewModel: AppViewModel) -> Any {
+        let iosVM = iosAppViewModel(commonVm: viewModel)
+        return UIHostingController(rootView: ContentView(viewModel: iosVM))
+    }
+}
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView(viewModel: iosAppViewModel(commonVm: AppViewModel()))
     }
 }

@@ -1,11 +1,19 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+
 plugins {
+    //added
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+    //added
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+
+
 }
 
 kotlin {
@@ -13,14 +21,31 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
+
+    }
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
     }
     
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.ktor.client.okhttp) //ktor
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)  // iOS Ktor engine
         }
         commonMain.dependencies {
+            //added
+            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -29,12 +54,23 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            //added
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+            implementation(projects.shared)
+            // Ktor
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.json)
             implementation(projects.shared)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
     }
+}//added
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {
@@ -65,6 +101,10 @@ android {
 }
 
 dependencies {
+    add("kspAndroid", libs.room.compiler)
+    add("kspIosX64", libs.room.compiler)
+    add("kspIosArm64", libs.room.compiler)
+    add("kspIosSimulatorArm64", libs.room.compiler)
+//    add("ksp", libs.room.compiler)
     debugImplementation(libs.compose.uiTooling)
 }
-
